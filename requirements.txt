@@ -1,11 +1,7 @@
 streamlit
-langchain
-openai
-huggingface_hub
 requests
 google-search-results
-faiss-cpu
-pypdf
-scikit-learn
 python-dotenv
 scholarly
+google-generativeai
+

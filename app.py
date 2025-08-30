@@ -142,22 +142,25 @@ if st.button("Search Papers"):
         else:
             st.session_state["papers"] = papers
             st.session_state.pop("selected_paper_link", None)
+            st.session_state.pop("content_to_process", None) # Clear old content
 
+# --- NEW LOGIC STARTS HERE ---
 if "papers" in st.session_state:
     papers = st.session_state["papers"]
     paper_titles = [p["title"] for p in papers]
-    selected_title = st.selectbox("Choose a paper to work with:", paper_titles)
+    
+    # Use a unique key for the selectbox to avoid a potential bug
+    selected_title = st.selectbox("Choose a paper to work with:", paper_titles, key="paper_selector")
 
     if selected_title:
         paper = next(p for p in papers if p["title"] == selected_title)
-        
         link = paper.get("link", "#")
         snippet = paper.get("snippet", "")
         st.write("🔗 [Link to Paper](" + link + ")")
         st.write("**Snippet:**", snippet)
-
-        full_text_button_key = f"get_content_button_{selected_title}"
-        if st.button("Get Content from Link", key=full_text_button_key):
+        
+        # This is where the core logic begins to differ
+        if st.button("Get Content from Link"):
             with st.spinner("Retrieving full content from link..."):
                 full_content = scrape_webpage_content(link)
                 if full_content:
@@ -167,103 +170,113 @@ if "papers" in st.session_state:
                     st.warning("Could not retrieve full content. Using the snippet instead.")
                     st.session_state["content_to_process"] = snippet
         
-        text_to_process = st.session_state.get("content_to_process", snippet)
+        # Only display the generation buttons if a content has been processed
+        if "content_to_process" in st.session_state and st.session_state["content_to_process"]:
+            st.markdown("---")
+            text_to_process = st.session_state["content_to_process"]
 
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            if st.button("Generate Summary"):
-                with st.spinner("Generating summary..."):
-                    summary = summarize_long(text_to_process, explanation_ip, length_ip)
-                    st.session_state["summary_display"] = summary
-        
-        with col2:
-            if st.button("Generate Q&A & Flashcards"):
-                with st.spinner("Generating Q&A and flashcards..."):
-                    questions, flashcards = generate_qa_flashcards(text_to_process, num_questions)
-                    st.session_state["questions_display"] = questions
-                    st.session_state["flashcards_display"] = flashcards
-
-        with col3:
-            if st.button("Generate Practice Quiz"):
-                with st.spinner("Generating quiz..."):
-                    quiz_data = generate_quiz(text_to_process, num_questions)
-                    st.session_state["quiz_display"] = quiz_data
-        
-        if "summary_display" in st.session_state:
-            st.subheader("📑 Summarized Notes")
-            st.write(st.session_state["summary_display"])
-            del st.session_state["summary_display"]
-
-        if "questions_display" in st.session_state and st.session_state["questions_display"]:
-            num_q_bank = len(st.session_state["questions_display"])
-            st.subheader(f"❓ Question Bank ({num_q_bank} Questions)")
-            for q in st.session_state["questions_display"]:
-                with st.expander(f"Question: {q.get('question', 'N/A')}"):
-                    st.write(f"**Answer:** {q.get('answer', 'N/A')}")
-            del st.session_state["questions_display"]
-
-        if "flashcards_display" in st.session_state and st.session_state["flashcards_display"]:
-            num_flashcards = len(st.session_state["flashcards_display"])
-            st.subheader(f"🃏 Flashcards ({num_flashcards} Cards)")
-            for card in st.session_state["flashcards_display"]:
-                with st.expander(f"Term: {card.get('term', 'N/A')}"):
-                    st.write(f"**Definition:** {card.get('definition', 'N/A')}")
-            del st.session_state["flashcards_display"]
-
-        if "quiz_display" in st.session_state and st.session_state["quiz_display"]:
-            num_quiz_questions = len(st.session_state["quiz_display"])
-            st.subheader(f"📝 Practice Quiz ({num_quiz_questions} Questions)")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button("Generate Summary"):
+                    with st.spinner("Generating summary..."):
+                        summary = summarize_long(text_to_process, explanation_ip, length_ip)
+                        st.session_state["summary_display"] = summary
             
-            # Define a constant for the skip option
-            SKIP_OPTION_VALUE = "➡️ Skip"
+            with col2:
+                if st.button("Generate Q&A & Flashcards"):
+                    with st.spinner("Generating Q&A and flashcards..."):
+                        questions, flashcards = generate_qa_flashcards(text_to_process, num_questions)
+                        st.session_state["questions_display"] = questions
+                        st.session_state["flashcards_display"] = flashcards
 
-            with st.form("quiz_form"):
-                for i, q in enumerate(st.session_state["quiz_display"]):
-                    st.markdown(f"**Q{i+1}:** {q.get('question', 'N/A')}")
-                    
-                    options = q.get("options", {})
-                    if options:
-                        # Add the "Skip" option to the dictionary
-                        skip_key = f"skip_q_{i}"
-                        options[skip_key] = SKIP_OPTION_VALUE
-                        
-                        user_answer = st.radio(
-                            "Choose an option:", 
-                            options.values(), 
-                            key=f"quiz_q_{i}"
-                        )
-                        
-                        # Store the key of the user's answer
-                        for key, value in options.items():
-                            if value == user_answer:
-                                st.session_state[f"user_answer_{i}"] = key
-                                break
-                    else:
-                        st.warning(f"No options found for question {i+1}. Skipping.")
+            with col3:
+                if st.button("Generate Practice Quiz"):
+                    with st.spinner("Generating quiz..."):
+                        quiz_data = generate_quiz(text_to_process, num_questions)
+                        st.session_state["quiz_display"] = quiz_data
+        
+            # ... (rest of your display logic remains the same below this point)
+            
+            if "summary_display" in st.session_state:
+                st.subheader("📑 Summarized Notes")
+                st.write(st.session_state["summary_display"])
+                # Note: Do not use `del` immediately after displaying. It can cause re-rendering issues.
+            
+            if "questions_display" in st.session_state and st.session_state["questions_display"]:
+                num_q_bank = len(st.session_state["questions_display"])
+                st.subheader(f"❓ Question Bank ({num_q_bank} Questions)")
+                for q in st.session_state["questions_display"]:
+                    with st.expander(f"Question: {q.get('question', 'N/A')}"):
+                        st.write(f"**Answer:** {q.get('answer', 'N/A')}")
+
+            if "flashcards_display" in st.session_state and st.session_state["flashcards_display"]:
+                num_flashcards = len(st.session_state["flashcards_display"])
+                st.subheader(f"🃏 Flashcards ({num_flashcards} Cards)")
+                for card in st.session_state["flashcards_display"]:
+                    with st.expander(f"Term: {card.get('term', 'N/A')}"):
+                        st.write(f"**Definition:** {card.get('definition', 'N/A')}")
+
+            if "quiz_display" in st.session_state and st.session_state["quiz_display"]:
+                # ... (your existing quiz display and form logic)
+                num_quiz_questions = len(st.session_state["quiz_display"])
+                st.subheader(f"📝 Practice Quiz ({num_quiz_questions} Questions)")
                 
-                submit_button = st.form_submit_button("Submit Quiz")
-            
-            if submit_button:
-                score = 0
-                total_attempted = 0
-                for i, q in enumerate(st.session_state["quiz_display"]):
-                    if f"user_answer_{i}" in st.session_state:
-                        user_answer_key = st.session_state[f"user_answer_{i}"]
-                        skip_key = f"skip_q_{i}"
+                # Define a constant for the skip option
+                SKIP_OPTION_VALUE = "➡️ Skip"
 
-                        if user_answer_key == skip_key:
-                            st.markdown(f"**Q{i+1}:** Skipped. ⏭️ The correct answer was **{q['answer']}**.")
+                with st.form("quiz_form"):
+                    for i, q in enumerate(st.session_state["quiz_display"]):
+                        st.markdown(f"**Q{i+1}:** {q.get('question', 'N/A')}")
+                        
+                        options = q.get("options", {})
+                        if options:
+                            skip_key = f"skip_q_{i}"
+                            options[skip_key] = SKIP_OPTION_VALUE
+                            
+                            user_answer = st.radio(
+                                "Choose an option:", 
+                                options.values(), 
+                                key=f"quiz_q_{i}"
+                            )
+                            
+                            for key, value in options.items():
+                                if value == user_answer:
+                                    st.session_state[f"user_answer_{i}"] = key
+                                    break
                         else:
-                            total_attempted += 1
-                            if user_answer_key == q["answer"]:
-                                st.markdown(f"**Q{i+1}:** Correct! ✅")
-                                score += 1
-                            else:
-                                st.markdown(f"**Q{i+1}:** Incorrect. ❌ The correct answer was **{q['answer']}**.")
-                    else:
-                        st.markdown(f"**Q{i+1}:** (No answer submitted) The correct answer was **{q['answer']}**.")
+                            st.warning(f"No options found for question {i+1}. Skipping.")
+                    
+                    submit_button = st.form_submit_button("Submit Quiz")
                 
-                st.success(f"You scored {score} out of {total_attempted} attempted questions.")
-                del st.session_state["quiz_display"]
+                if submit_button:
+                    score = 0
+                    total_attempted = 0
+                    for i, q in enumerate(st.session_state["quiz_display"]):
+                        if f"user_answer_{i}" in st.session_state:
+                            user_answer_key = st.session_state[f"user_answer_{i}"]
+                            skip_key = f"skip_q_{i}"
+
+                            if user_answer_key == skip_key:
+                                st.markdown(f"**Q{i+1}:** Skipped. ⏭️ The correct answer was **{q['answer']}**.")
+                            else:
+                                total_attempted += 1
+                                if user_answer_key == q["answer"]:
+                                    st.markdown(f"**Q{i+1}:** Correct! ✅")
+                                    score += 1
+                                else:
+                                    st.markdown(f"**Q{i+1}:** Incorrect. ❌ The correct answer was **{q['answer']}**.")
+                        else:
+                            st.markdown(f"**Q{i+1}:** (No answer submitted) The correct answer was **{q['answer']}**.")
+                    
+                    st.success(f"You scored {score} out of {total_attempted} attempted questions.")
+                    
+                    # To prevent the quiz from showing again on reruns
+                    del st.session_state["quiz_display"]
+                    
+        # This else block will only run if there are papers, but no content has been processed yet.
         else:
-            st.warning("No content available to generate from. Please search for a topic and select a paper.")
+            st.info("Please click 'Get Content from Link' to retrieve the full text before generating study materials.")
+
+# This final else block only runs on the very first load or if no papers were found.
+else:
+    st.info("Start by searching for a topic and clicking 'Search Papers'.")
