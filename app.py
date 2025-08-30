@@ -279,4 +279,8 @@ if "papers" in st.session_state:
 
 # This final else block only runs on the very first load or if no papers were found.
 else:
+
     st.info("Start by searching for a topic and clicking 'Search Papers'.")
+
+    st.info("Start by searching for a topic and clicking 'Search Papers'.")
+
