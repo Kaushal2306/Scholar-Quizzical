@@ -10,8 +10,8 @@ import re
 
 # Load environment variables
 load_dotenv()
-GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-SERPAPI_KEY = os.getenv("SERPAPI_API_KEY")
+GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
+SERPAPI_KEY = st.secrets["SERPAPI_API_KEY"]
 
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
@@ -274,13 +274,12 @@ if "papers" in st.session_state:
                     del st.session_state["quiz_display"]
                     
         # This else block will only run if there are papers, but no content has been processed yet.
-        else:
-            st.info("Please click 'Get Content from Link' to retrieve the full text before generating study materials.")
+        # else:
+        #     st.info("Please click 'Get Content from Link' to retrieve the full text before generating study materials.")
 
 # This final else block only runs on the very first load or if no papers were found.
 else:
 
     st.info("Start by searching for a topic and clicking 'Search Papers'.")
 
-    st.info("Start by searching for a topic and clicking 'Search Papers'.")
 
