@@ -10,8 +10,8 @@ import re
 
 # Load environment variables
 load_dotenv()
-GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
-SERPAPI_KEY = st.secrets["SERPAPI_API_KEY"]
+GEMINI_KEY = os.getenv("GEMINI_API_KEY")
+SERPAPI_KEY = os.getenv("SERPAPI_API_KEY")
 
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
