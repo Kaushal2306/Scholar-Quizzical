@@ -273,14 +273,15 @@ if "papers" in st.session_state:
                     # To prevent the quiz from showing again on reruns
                     del st.session_state["quiz_display"]
                     
-        # This else block will only run if there are papers, but no content has been processed yet.
-        # else:
-        #     st.info("Please click 'Get Content from Link' to retrieve the full text before generating study materials.")
+        #This else block will only run if there are papers, but no content has been processed yet.
+        else:
+            st.info("Please click 'Get Content from Link' to retrieve the full text before generating study materials.")
 
 # This final else block only runs on the very first load or if no papers were found.
 else:
 
     st.info("Start by searching for a topic and clicking 'Search Papers'.")
+
 
 
 
