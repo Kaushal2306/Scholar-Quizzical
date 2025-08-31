@@ -124,7 +124,7 @@ def fetch_papers(query):
     return results.get("organic_results", [])
 
 # Streamlit UI
-st.title("📘 Scholar Summarizer with Gemini")
+st.title("📘 Scholar Quizzical")
 
 query = st.text_input("Enter your topic (Google Scholar Search):", "Integration in Calculus")
 
@@ -281,5 +281,6 @@ if "papers" in st.session_state:
 else:
 
     st.info("Start by searching for a topic and clicking 'Search Papers'.")
+
 
 
